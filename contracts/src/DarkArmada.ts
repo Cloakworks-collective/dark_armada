@@ -52,5 +52,31 @@ export class DarkArmada extends SmartContract {
         this.attackTreeRoot.set(Const.EMPTY_TREE_ROOT12);
         this.playerNullifierRoot.set(Const.EMPTY_MAP_ROOT);
         this.locationNullifierRoot.set(Const.EMPTY_MAP_ROOT);
-      }
+    }
+
+    /**
+     * Create a new planet, after verifying game constraints
+     * 
+     */
+    @method createPlanet() {}
+
+    /**
+     * Set the defense of a planet
+     */
+    @method setDefense(){}
+
+    /**
+     * Launch an attack on a planet
+     */
+    @method launchAttack(){}
+
+    /**
+     * Resolve an attack
+     */
+    @method resolveAttack(){}
+
+    /**
+     * Claim a forfeit
+     */
+    @method claimForfeit(){}
 }
