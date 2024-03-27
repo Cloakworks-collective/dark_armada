@@ -58,25 +58,76 @@ export class DarkArmada extends SmartContract {
      * Create a new planet, after verifying game constraints
      * 
      */
-    @method createPlanet() {}
+    @method createPlanet() {
+
+        // verify max number of planets constraint
+        // verify co-ordinates are within game map
+        // verify co-ordinates are not already taken
+        // verify co-ordinates are suitable for planet creation
+        // verify player does not already have a home planet
+
+        // modify planetTreeRoot
+        // modify ownershipTreeRoot
+        // modify locationNullifierRoot
+        // modify playerNullifierRoot
+
+    }
 
     /**
      * Set the defense of a planet
      */
-    @method setDefense(){}
+    @method setDefense(){
+
+        // verify owndership of planet
+        // verify that planet is not under attack
+        // verify planetary defense strength is within limits
+
+        // compute defenseHash
+        // modify defenseTreeRoot with defenseHash
+
+    }
 
     /**
      * Launch an attack on a planet
      */
-    @method launchAttack(){}
+    @method launchAttack(){
+
+        // verify attacker has a home planet
+        // verify defender is not the attacker
+        // verify defender is not under attack already
+        // verify defender has defense
+        // verify atacking fleet strength is within limits
+        // verify attacker details - faction
+
+        // compute attackHash 
+        // modify attackTreeRoot with attackHash
+
+    }
 
     /**
      * Resolve an attack
      */
-    @method resolveAttack(){}
+    @method resolveAttack(){
+        
+        // verify ownership of defending planet 
+        // verify there is no change in attack
+        // verify there is no change in defense
+        // verify defender details - faction
+
+        // compute winner
+
+        // modify planetTreeRoot - change points 
+        // modify attackTreeRoot - blank out the attack as it is resolved
+
+    }
 
     /**
      * Claim a forfeit
      */
-    @method claimForfeit(){}
+    @method claimForfeit(){
+
+        // verify that the attacker is calling this method
+        // verify that the forfeit claim is valid (time has passed)
+
+    }
 }
