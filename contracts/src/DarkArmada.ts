@@ -10,13 +10,26 @@ import {
     Poseidon
 } from 'o1js';
 
+/**
+ * MerkleTree witnesses
+ * 
+ * @note: The height of the tree is 12, therefor the number of leaves is 2^(12-1) = 2048
+ * @note: The max number of planets is 1000, so, the tree is big enough to hold all the planets, with room for expansion
+ * @note: the index of the leaf is planetId, and the same index(planetId) is used in all the trees, to store the same planet data
+ * @note: e.g. leaf 2 in planetTreeWitness, ownershipTreeWitness, defenseTreeWitness, attackTreeWitness, all represent the same planet(planetId=2)
+ */
+class planetTreeWitness extends MerkleWitness(12) {} 
+class ownershipTreeWitness extends MerkleWitness(12) {}
+class defenseTreeWitness extends MerkleWitness(12) {}
+class attackTreeWitness extends MerkleWitness(12) {}
+
 
 import { Const } from './utils/consts';
 import {Error} from './utils/errors';
 // import { PlanetDetails, Fleet } from './utils/models';
 // import {verifyFleetStrength, calculateWinner} from './utils/gameLogic';
 
-export class DarkArmada extends SmartContract {
+export class DarkArmadaZkApp extends SmartContract {
     /**
      * State variables. on-chain game state (max 8 fields)
      */
@@ -57,13 +70,25 @@ export class DarkArmada extends SmartContract {
     /**
      * Create a new planet, after verifying game constraints
      * 
+     * @param x - x-coordinate of the planet
+     * @param y - y-coordinate of the planet
+     * @param faction - faction of the planet
+     * @param planetWitness - Witness to verify off-chain planet details MerkleTree
+     * @param ownerWitness - Witness to verify off-chain ownership MerkleTree
      */
-    @method createPlanet() {
+    @method createPlanet(
+        x: Field,
+        y: Field,
+        faction: Field,
+        planetWitness: planetTreeWitness,
+        ownerWitness: ownershipTreeWitness
+    ) {
 
         // verify max number of planets constraint
         // verify co-ordinates are within game map
         // verify co-ordinates are not already taken
         // verify co-ordinates are suitable for planet creation
+        // verify that the faction is valid
         // verify player does not already have a home planet
 
         // modify planetTreeRoot
