@@ -1,9 +1,8 @@
-import { Field, Provable } from 'o1js';
+import { Field, Poseidon, Provable } from 'o1js';
 
 import { Fleet } from './models';
-import { Const, } from './consts';
+import { Const } from './consts';
 import { Error } from './errors';
-
 
 export function verifyFleetStrength(fleet: Fleet) {
   const fleetStrength = fleet.strength();
@@ -53,4 +52,12 @@ export function calculateWinner(
   );
 
   return calculatedWinner;
+}
+
+export function calculateLocationHash(x: Field, y: Field): Field {
+  let locationHash = Poseidon.hash([x, y]);
+  for (let i = 0; i < Const.CHAIN_HASH_TIMES; i++) {
+    locationHash = Poseidon.hash([locationHash, Field(i)]);
+  }
+  return locationHash;
 }

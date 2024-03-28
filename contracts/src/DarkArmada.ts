@@ -25,8 +25,12 @@ class attackTreeWitness extends MerkleWitness(12) {}
 
 import { Const } from './utils/consts';
 import { Error } from './utils/errors';
-// import { PlanetDetails, Fleet } from './utils/models';
-// import {verifyFleetStrength, calculateWinner} from './utils/gameLogic';
+import { PlanetDetails, Fleet } from './utils/models';
+import {
+  calculateLocationHash,
+  verifyFleetStrength,
+  calculateWinner,
+} from './utils/gameLogic';
 
 export class DarkArmadaZkApp extends SmartContract {
   /**
@@ -79,7 +83,9 @@ export class DarkArmadaZkApp extends SmartContract {
     y: Field,
     faction: Field,
     planetWitness: planetTreeWitness,
-    ownerWitness: ownershipTreeWitness
+    ownerWitness: ownershipTreeWitness,
+    locationNullifierWitness: MerkleMapWitness,
+    playerNullifierWitness: MerkleMapWitness
   ) {
     // verify max number of planets constraint
     const numPlanetsState = this.numberOfPlanets.getAndRequireEquals();
@@ -93,10 +99,38 @@ export class DarkArmadaZkApp extends SmartContract {
     y.assertLessThan(Const.MAX_GAME_MAP_LENGTH, Error.COORDINATE_OUT_OF_RANGE);
 
     // verify co-ordinates are not already taken
+    const locationHash = calculateLocationHash(x, y);
+    const locationNullifierRoot =
+      this.locationNullifierRoot.getAndRequireEquals();
+
+    const [derivedLocRoot, derivedLocKey] =
+      locationNullifierWitness.computeRootAndKey(Const.EMPTY_FIELD);
+    derivedLocRoot.assertEquals(
+      locationNullifierRoot,
+      Error.PLANET_ALREADY_EXISTS
+    );
+    derivedLocKey.assertEquals(locationHash, Error.PLANET_ALREADY_EXISTS);
 
     // verify co-ordinates are suitable for planet creation
+    locationHash.assertLessThan(
+      Const.BIRTHING_DIFFICULTY_CUTOFF,
+      Error.COORDINATE_NOT_SUITABLE
+    );
+
     // verify that the faction is valid
+    faction.assertLessThanOrEqual(Field(2), Error.INVALID_FACTION);
+
     // verify player does not already have a home planet
+    const playerId = Poseidon.hash(this.sender.toFields());
+    const playerNullifierRoot = this.playerNullifierRoot.getAndRequireEquals();
+
+    const [derivedPlayerRoot, derivedPlayerKey] =
+      playerNullifierWitness.computeRootAndKey(Const.EMPTY_FIELD);
+    derivedPlayerRoot.assertEquals(
+      playerNullifierRoot,
+      Error.PLAYER_HAS_PLANET
+    );
+    derivedPlayerKey.assertEquals(playerId, Error.PLAYER_HAS_PLANET);
 
     // modify planetTreeRoot
     // modify ownershipTreeRoot
@@ -114,10 +148,27 @@ export class DarkArmadaZkApp extends SmartContract {
   @method setDefense(
     serializedDefense: Field,
     defenderOwnerWitness: ownershipTreeWitness,
-    defenseWitness: defenseTreeWitness
+    defenseWitness: defenseTreeWitness,
+    attackWitness: attackTreeWitness
   ) {
-    // verify owndership of planet
+    // verify ownership of planet (only the planet owner can set defense)
+    const playerId = Poseidon.hash(this.sender.toFields());
+
+    /*
+     * check that the ownerWitness is sent by the owner of the planet
+     * check that the defenderOwnerWitness is sent by the owner of the planet
+     */
+    const ownerRoot = this.ownershipTreeRoot.getAndRequireEquals();
+    const derivedOwnerRoot = defenderOwnerWitness.calculateRoot(playerId);
+    ownerRoot.assertEquals(derivedOwnerRoot, Error.INVALID_PLAYER);
+
+    const planetId = defenderOwnerWitness.calculateIndex();
+    const defendingPlanetId = defenseWitness.calculateIndex();
+    planetId.assertEquals(defendingPlanetId, Error.PLAYER_HAS_NO_ACCESS);
+
     // verify that planet is not under attack
+    const attackRoot = this.attackTreeRoot.getAndRequireEquals();
+
     // verify planetary defense strength is within limits
     // compute defenseHash
     // modify defenseTreeRoot with defenseHash

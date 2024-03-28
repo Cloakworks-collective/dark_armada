@@ -16,6 +16,7 @@ export namespace Const {
     Field(
       9999999999999999999999684630393576868452302619104417668738877266031346568
     );
+  export const CHAIN_HASH_TIMES = 10;
 
   // fleet values
   export const BATTLESHIP_STRENGTH = Field(4);
@@ -25,4 +26,9 @@ export namespace Const {
 
   // forfeit const
   export const FORFEIT_CLAIM_DURATION = UInt64.from(86400000); // 24 hours in milliseconds
+
+  // factions const
+  export const FACTION_A = Field(1);
+  export const FACTION_B = Field(2);
+  export const FACTION_C = Field(3);
 }

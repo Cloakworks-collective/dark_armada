@@ -15,6 +15,8 @@ export class Fleet extends Struct({
 }
 
 export class PlanetDetails extends Struct({
+  x: Field,
+  y: Field,
   faction: Field,
   points: Field,
 }) {}
