@@ -1,12 +1,14 @@
 export namespace Error {
   // create a new planet error messages
   export const COORDINATE_OUT_OF_RANGE = 'Coordinate out of range';
-  export const PLANET_ALREADY_EXISTS = 'Planet already exists';
-  export const MAX_NUM_PLANETS = 'Max number of planets reached';
+  export const PLANET_ALREADY_EXISTS_AT_THIS_LOCATION = 
+  'A homeworld has already been created at this location';
+  export const MAX_NUM_PLANETS = 
+  'Max number of planets for the game has been reached';
   export const COORDINATE_NOT_SUITABLE =
     'Coordinate not suitable for planet creation';
   export const INVALID_FACTION = 'Invalid faction';
-  export const PLAYER_HAS_PLANET = 'Player already has a planet';
+  export const PLAYER_HAS_PLANET = 'Player already has a home planet';
 
   // ownership error messages
   export const PLAYER_HAS_NO_ACCESS = 'This player has no access';

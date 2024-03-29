@@ -1,10 +1,10 @@
-import { Field, Poseidon, Provable } from 'o1js';
+import { Field, Provable } from 'o1js';
 
-import { Fleet } from './models';
-import { Const } from './consts';
-import { Error } from './errors';
+import { Fleet } from '../utils/models';
+import { Const } from '../utils/consts';
+import { Error } from '../utils/errors';
 
-export class BattleUtils {
+export class BattleVerifiers {
 
     verifyFleetStrength(fleet: Fleet) {
         const fleetStrength = fleet.strength();
