@@ -23,9 +23,11 @@ import {
 import { Const } from './utils/consts';
 import { Error } from './utils/errors';
 import { HelperUtils } from './utils/helpers';
+
 import { CreatePlanetVerifiers } from './verfiers/createPlanet';
-import { ComputeBattleVerifiers } from './verfiers/computeBattle';
 import { SetDefenseVerifiers } from './verfiers/setDefense';
+import { LaunchAttackVerifiers } from './verfiers/launchAttack';
+import { ComputeBattleVerifiers } from './verfiers/computeBattle';
 
 export class DarkArmadaZkApp extends SmartContract {
   /**
@@ -144,9 +146,12 @@ export class DarkArmadaZkApp extends SmartContract {
   /**
    * Set the defense of a planet
    *
-   * @param serializedDefense - defense details
+   * @param battleships - defense details
+   * @param destroyers - defense details
+   * @param carriers - defense details
    * @param defenderOwnerWitness - Witness to verify ownership of the planet
    * @param defenseWitness - Witness to store defense at the given leaf index of defense merkleTree
+   * @param attackWitness - Witness to verify planet is not under attack
    */
   @method setDefense(
     battleships: Field,
@@ -159,14 +164,12 @@ export class DarkArmadaZkApp extends SmartContract {
     // verify ownership of planet (only the planet owner can set defense)
     const ownerRoot = this.ownershipTreeRoot.getAndRequireEquals();
     const ownedWorldIndex = HelperUtils.getOwnedWorldId(this.sender, ownerRoot, defenderOwnerWitness);
-    const defenseWitnessIndex = defenseWitness.calculateIndex();
-    defenseWitnessIndex.assertEquals(ownedWorldIndex, Error.PLAYER_HAS_NO_ACCESS);
-
+    HelperUtils.verifyWitnessIndex(ownedWorldIndex, defenseWitness);
+    
     // verify that planet is not under attack
-    const attackWitnessIndex = attackWitness.calculateIndex();
-    attackWitnessIndex.assertEquals(ownedWorldIndex, Error.PLAYER_HAS_NO_ACCESS);
+    HelperUtils.verifyWitnessIndex(ownedWorldIndex, attackWitness);
     const attackRoot = this.attackTreeRoot.getAndRequireEquals();
-    SetDefenseVerifiers.verifyPlanetNotUnderAttack(attackRoot, attackWitness);
+    HelperUtils.verifyPlanetNotUnderAttack(attackRoot, attackWitness);
 
     // verify planetary defense strength is within limits
     const defense = HelperUtils.getPlanetaryDefense(this.sender, battleships, destroyers, carriers);
@@ -181,27 +184,74 @@ export class DarkArmadaZkApp extends SmartContract {
   /**
    * Launch an attack on a planet
    *
-   * @param serializedAttack - attack details
+   * @param battleships - attack details
+   * @param destroyers - attack details
+   * @param carriers - attack details
+   * @param faction - faction of the attacker
    * @param attackerOwnerWitness - Witness to verify attacker's ownership of home planet
    * @param attackerDefenseWitness - Witness to verify attacker's defense
    * @param targetDefenseWitness - Witness to verify target's defense
    * @param targetAttackWitness - Witness to store attack at the given leaf index of attack merkleTree
+   * @param planetWitness - Witness to verify planet details
+   * 
    */
   @method launchAttack(
-    serializedAttack: Field,
+    x: Field,
+    y: Field,
+    battleships: Field,
+    points: Field,
+    destroyers: Field,
+    carriers: Field,
+    faction: Field,
     attackerOwnerWitness: ownershipTreeWitness,
     attackerDefenseWitness: defenseTreeWitness,
+    attackerPlanetWitness: planetTreeWitness,
     targetDefenseWitness: defenseTreeWitness,
-    targetAttackWitness: attackTreeWitness
+    targetAttackWitness: attackTreeWitness,
   ) {
     // verify attacker has a home planet
-    // verify defender is not the attacker
+    const ownerRoot = this.ownershipTreeRoot.getAndRequireEquals();
+    const ownedWorldIndex = HelperUtils.getOwnedWorldId(this.sender, ownerRoot, attackerOwnerWitness);
+
+    // verify attacker has defense
+    HelperUtils.verifyWitnessIndex(ownedWorldIndex, attackerDefenseWitness);
+    const defenseRoot = this.defenseTreeRoot.getAndRequireEquals();
+    HelperUtils.verifyPlanetHasDefense(defenseRoot, attackerDefenseWitness);
+    
+    // verify defender is not the attacker - players cannot attack their own planets
+    const attackerIndex = attackerOwnerWitness.calculateIndex();
+    const defenderIndex = targetDefenseWitness.calculateIndex();
+    attackerIndex.assertNotEquals(defenderIndex, Error.CANNOT_ATTACK_OWN_PLANET);
+
     // verify defender is not under attack already
+    const attackRoot = this.attackTreeRoot.getAndRequireEquals();
+    HelperUtils.verifyPlanetNotUnderAttack(attackRoot, targetAttackWitness);
+    
     // verify defender has defense
+    HelperUtils.verifyPlanetHasDefense(defenseRoot, targetDefenseWitness);
+
     // verify atacking fleet strength is within limits
+    const currentTime = this.network.timestamp.get();
+    const attackingFleet = HelperUtils.getAttackFleet(faction, this.sender, battleships, destroyers, carriers, currentTime);
+    LaunchAttackVerifiers.verifyAttackStrength(attackingFleet);
+    
     // verify attacker details - faction
-    // compute attackHash
+    const apd = new PlanetDetails({
+        x: x,
+        y: y,
+        faction: faction,
+        points: points,
+    });
+    const apdHash = Poseidon.hash(PlanetDetails.toFields(apd));
+    const planetRoot = this.planetTreeRoot.getAndRequireEquals();
+    const derivedplanetRoot = attackerPlanetWitness.calculateRoot(apdHash);
+    planetRoot.assertEquals(derivedplanetRoot, Error.INVALID_ATTACKER_DETAILS);
+    
     // modify attackTreeRoot with attackHash
+    const attackHash = Poseidon.hash(AttackFleet.toFields(attackingFleet));
+    const updatedAttackRoot = targetAttackWitness.calculateRoot(attackHash);
+    this.attackTreeRoot.set(updatedAttackRoot);
+    
   }
 
   /**

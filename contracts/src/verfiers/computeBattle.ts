@@ -1,24 +1,24 @@
 import { Field, Provable } from 'o1js';
 
-import { Fleet } from '../utils/globalObjects';
+import { PlanetaryDefense, AttackFleet } from '../utils/globalObjects';
 import { Const } from '../utils/consts';
 import { Error } from '../utils/errors';
 
 export class ComputeBattleVerifiers {
 
-    verifyFleetStrength(fleet: Fleet) {
+    verifyFleetStrength(fleet: PlanetaryDefense) {
         const fleetStrength = fleet.strength();
-        fleetStrength.assertLessThanOrEqual(Const.MAX_FLEET_STRENGTH, Error.FLEET_STRENGTH);
+        fleetStrength.assertLessThanOrEqual(Const.MAX_DEFENSE_STRENGTH, Error.FLEET_STRENGTH);
     }
 
-    calculateWinner(attackFleet: Fleet, defenseFleet: Fleet): Field {
+    calculateWinner(attackFleet: AttackFleet, defense: PlanetaryDefense): Field {
         const attackeBattleships = attackFleet.battleships.mul(Const.BATTLESHIP_STRENGTH);
         const attackeDestroyers = attackFleet.destroyers.mul(Const.DESTROYER_STRENGTH);
         const attackeCarriers = attackFleet.carriers.mul(Const.CARRIER_STRENGTH);
 
-        const defenderBattleships = defenseFleet.battleships.mul(Const.BATTLESHIP_STRENGTH);
-        const defenderDestroyers = defenseFleet.destroyers.mul(Const.DESTROYER_STRENGTH);
-        const defenderCarriers = defenseFleet.carriers.mul(Const.CARRIER_STRENGTH);
+        const defenderBattleships = defense.battleships.mul(Const.BATTLESHIP_STRENGTH);
+        const defenderDestroyers = defense.destroyers.mul(Const.DESTROYER_STRENGTH);
+        const defenderCarriers = defense.carriers.mul(Const.CARRIER_STRENGTH);
 
         //  battleships > destroyers
         const battleshipsBeatsDestroyers = attackeBattleships.sub(defenderDestroyers);
@@ -35,7 +35,7 @@ export class ComputeBattleVerifiers {
 
         const calculatedWinner = Provable.if(
             battleResult.greaterThanOrEqual(Field(0)),
-            defenseFleet.playerId,
+            defense.playerId,
             attackFleet.playerId
         );
 
