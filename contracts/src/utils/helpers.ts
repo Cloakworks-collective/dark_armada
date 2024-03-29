@@ -102,7 +102,7 @@ export class HelperUtils {
 
   static verifyPlanetDetails(x: Field, y: Field, faction: Field, points: Field){
     new PlanetDetails({ x: x, y: y, faction: faction, points: points });
-
+    const planetDetailsHash = Poseidon.hash([x, y, faction, points]);
 
   }
 

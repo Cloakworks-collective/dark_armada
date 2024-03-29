@@ -8,6 +8,7 @@ import {
   MerkleMapWitness,
   MerkleWitness,
   Poseidon,
+  Provable,
 } from 'o1js';
 
 import { 
@@ -28,6 +29,7 @@ import { CreatePlanetVerifiers } from './verfiers/createPlanet';
 import { SetDefenseVerifiers } from './verfiers/setDefense';
 import { LaunchAttackVerifiers } from './verfiers/launchAttack';
 import { ComputeBattleVerifiers } from './verfiers/computeBattle';
+import { p } from 'o1js/dist/node/bindings/crypto/finite-field';
 
 export class DarkArmadaZkApp extends SmartContract {
   /**
@@ -266,21 +268,80 @@ export class DarkArmadaZkApp extends SmartContract {
    * @param planetWitness - Witness to store planet details after the attack is resolved
    */
   @method resolveAttack(
-    serializedAttack: Field,
-    serializedDefense: Field,
-    serializedPlanetDetails: Field,
-    ownerWitness: ownershipTreeWitness,
+    attackFleet: AttackFleet,
+    planetaryDefense: PlanetaryDefense,
+    defenderDetails: PlanetDetails,
+    attackerDetails: PlanetDetails,
+    defenderOwnerWitness: ownershipTreeWitness,
     defenseWitness: defenseTreeWitness,
     attackWitness: attackTreeWitness,
-    planetWitness: planetTreeWitness
+    defenderPlanetWitness: planetTreeWitness,
+    attackerPlanetWitness: planetTreeWitness
   ) {
     // verify ownership of defending planet
+    const ownerRoot = this.ownershipTreeRoot.getAndRequireEquals();
+    const ownedWorldIndex = HelperUtils.getOwnedWorldId(this.sender, ownerRoot, defenderOwnerWitness);
+    
     // verify there is no change in attack
+    const attackRoot = this.attackTreeRoot.getAndRequireEquals();
+    HelperUtils.verifyWitnessIndex(ownedWorldIndex, attackWitness);
+    const attackHash = Poseidon.hash(AttackFleet.toFields(attackFleet));
+    const derivedAttackRoot = attackWitness.calculateRoot(attackHash);
+    attackRoot.assertEquals(derivedAttackRoot, Error.ATTACK_DOES_NOT_MATCH);
+
     // verify there is no change in defense
+    const defenseRoot = this.defenseTreeRoot.getAndRequireEquals();
+    HelperUtils.verifyWitnessIndex(ownedWorldIndex, defenseWitness);
+    const defenseHash = Poseidon.hash(PlanetaryDefense.toFields(planetaryDefense));
+    const derivedDefenseRoot = defenseWitness.calculateRoot(defenseHash);
+    defenseRoot.assertEquals(derivedDefenseRoot, Error.DEFENSE_DOES_NOT_MATCH);
+
     // verify defender details - faction
+    const planetRoot = this.planetTreeRoot.getAndRequireEquals();
+    const planetDetailsHash = Poseidon.hash(PlanetDetails.toFields(defenderDetails));
+    const derivedplanetRoot = defenderPlanetWitness.calculateRoot(planetDetailsHash);
+    planetRoot.assertEquals(derivedplanetRoot, Error.INVALID_ATTACKER_DETAILS);
+
     // compute winner
+    const winnerId = ComputeBattleVerifiers.calculateWinner(attackFleet, planetaryDefense);
+
     // modify planetTreeRoot - change points
+    let defenderPoints = defenderDetails.points;
+    const updatedDefenderPoints = Provable.if(
+        winnerId.equals(planetaryDefense.playerId),
+        defenderPoints.add(Const.WIN_POINTS),
+        defenderPoints.sub(Const.LOSE_POINTS)
+    )
+    const updatedDefenderDetails = new PlanetDetails({
+        x: defenderDetails.x,
+        y: defenderDetails.y,
+        faction: defenderDetails.faction,
+        points: updatedDefenderPoints,
+    });
+    const updatedPlanetDetailsHash = Poseidon.hash(PlanetDetails.toFields(updatedDefenderDetails));
+    const updatedPlanetRoot = defenderPlanetWitness.calculateRoot(updatedPlanetDetailsHash);
+    this.planetTreeRoot.set(updatedPlanetRoot);
+
+    let attackerPoints = attackerDetails.points;
+    const updatedAttackerPoints = Provable.if(
+        winnerId.equals(planetaryDefense.playerId),
+        attackerPoints.sub(Const.WIN_POINTS),
+        attackerPoints.add(Const.LOSE_POINTS)
+    )
+    const updatedAttackerDetails = new PlanetDetails({
+        x: attackerDetails.x,
+        y: attackerDetails.y,
+        faction: attackerDetails.faction,
+        points: updatedAttackerPoints,
+    });
+    const updatedAttackerDetailsHash = Poseidon.hash(PlanetDetails.toFields(updatedAttackerDetails));
+    const updatedAttackerRoot = attackerPlanetWitness.calculateRoot(updatedAttackerDetailsHash);
+    this.planetTreeRoot.set(updatedAttackerRoot);
+
+
     // modify attackTreeRoot - blank out the attack as it is resolved
+    const updatedAttackRoot = attackWitness.calculateRoot(Const.EMPTY_FIELD);
+    this.attackTreeRoot.set(updatedAttackRoot);
   }
 
   /**

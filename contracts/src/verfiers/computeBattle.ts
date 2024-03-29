@@ -6,12 +6,12 @@ import { Error } from '../utils/errors';
 
 export class ComputeBattleVerifiers {
 
-    verifyFleetStrength(fleet: PlanetaryDefense) {
+    static verifyFleetStrength(fleet: PlanetaryDefense) {
         const fleetStrength = fleet.strength();
-        fleetStrength.assertLessThanOrEqual(Const.MAX_DEFENSE_STRENGTH, Error.FLEET_STRENGTH);
+        fleetStrength.assertLessThanOrEqual(Const.MAX_DEFENSE_STRENGTH, Error.DEFENSE_STRENGTH);
     }
 
-    calculateWinner(attackFleet: AttackFleet, defense: PlanetaryDefense): Field {
+    static calculateWinner(attackFleet: AttackFleet, defense: PlanetaryDefense): Field {
         const attackeBattleships = attackFleet.battleships.mul(Const.BATTLESHIP_STRENGTH);
         const attackeDestroyers = attackFleet.destroyers.mul(Const.DESTROYER_STRENGTH);
         const attackeCarriers = attackFleet.carriers.mul(Const.CARRIER_STRENGTH);
@@ -36,7 +36,7 @@ export class ComputeBattleVerifiers {
         const calculatedWinner = Provable.if(
             battleResult.greaterThanOrEqual(Field(0)),
             defense.playerId,
-            attackFleet.playerId
+            attackFleet.attackerId
         );
 
         return calculatedWinner;

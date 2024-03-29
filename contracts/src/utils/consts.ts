@@ -20,6 +20,8 @@ export namespace Const {
       9999999999999999999999684630393576868452302619104417668738877266031346568
     );
   export const CHAIN_HASH_TIMES = 10;
+  export const WIN_POINTS = Field(2);
+  export const LOSE_POINTS = Field(1);
 
   // fleet values
   export const BATTLESHIP_STRENGTH = Field(4);
