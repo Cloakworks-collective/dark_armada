@@ -1,4 +1,4 @@
-import { Field, Struct, MerkleWitness, UInt64 } from "o1js";
+import { Field, Struct, MerkleWitness, UInt64 } from 'o1js';
 
 /**
  * MerkleTree witnesses
@@ -13,42 +13,45 @@ export class ownershipTreeWitness extends MerkleWitness(12) {}
 export class defenseTreeWitness extends MerkleWitness(12) {}
 export class attackTreeWitness extends MerkleWitness(12) {}
 
-export type GameWitness = planetTreeWitness | ownershipTreeWitness | defenseTreeWitness | attackTreeWitness;
-
+export type GameWitness =
+  | planetTreeWitness
+  | ownershipTreeWitness
+  | defenseTreeWitness
+  | attackTreeWitness;
 
 export class PlanetaryDefense extends Struct({
-    playerId: Field,
-    battleships: Field,
-    destroyers: Field,
-    carriers: Field,
-  }) {
-    strength() {
-      const fleetStrength = this.battleships
-        .add(this.destroyers)
-        .add(this.carriers);
-      return fleetStrength;
-    }
+  playerId: Field,
+  battleships: Field,
+  destroyers: Field,
+  carriers: Field,
+}) {
+  strength() {
+    const fleetStrength = this.battleships
+      .add(this.destroyers)
+      .add(this.carriers);
+    return fleetStrength;
   }
+}
 
-  export class AttackFleet extends Struct({
-    faction: Field,
-    attackerId: Field,
-    battleships: Field,
-    destroyers: Field,
-    carriers: Field,
-    attackLaunchedAt: UInt64,
-  }) {
-    strength() {
-      const fleetStrength = this.battleships
-        .add(this.destroyers)
-        .add(this.carriers);
-      return fleetStrength;
-    }
+export class AttackFleet extends Struct({
+  faction: Field,
+  attackerId: Field,
+  battleships: Field,
+  destroyers: Field,
+  carriers: Field,
+  attackLaunchedAt: UInt64,
+}) {
+  strength() {
+    const fleetStrength = this.battleships
+      .add(this.destroyers)
+      .add(this.carriers);
+    return fleetStrength;
   }
-  
-  export class PlanetDetails extends Struct({
-    x: Field,
-    y: Field,
-    faction: Field,
-    points: Field,
-  }) {}
+}
+
+export class PlanetDetails extends Struct({
+  x: Field,
+  y: Field,
+  faction: Field,
+  points: Field,
+}) {}
