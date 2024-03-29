@@ -32,5 +32,6 @@ export namespace Error {
   export const DEFENSE_DOES_NOT_MATCH = 'Defense does not match';
 
   // forfeit error messages
-  export const FORFEIT_CLAIM = 'Forfeit can not be claimed';
+  export const NOT_ATTACKER = 'Only the attacker can claim the forfeit';
+  export const FORFEIT_CLAIM_DURATION = 'Forfeit can not be claimed before claim duration passed';
 }

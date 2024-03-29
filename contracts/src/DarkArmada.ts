@@ -238,6 +238,7 @@ export class DarkArmadaZkApp extends SmartContract {
     LaunchAttackVerifiers.verifyAttackStrength(attackingFleet);
     
     // verify attacker details - faction
+    // TODO: defender cannot know the attacker's x,y 
     const apd = new PlanetDetails({
         x: x,
         y: y,
@@ -351,10 +352,44 @@ export class DarkArmadaZkApp extends SmartContract {
    * @param targetAttackWitness - Witness to verify the attack
    */
   @method claimForfeit(
-    serializedAttack: Field,
-    targetAttackWitness: attackTreeWitness
+    attackFleet: AttackFleet,
+    attackerDetails: PlanetDetails,
+    attackerOwnerWitness: ownershipTreeWitness,
+    defenderAttackWitness: attackTreeWitness,
+    attackerPlanetWitness: planetTreeWitness
   ) {
     // verify that the attacker is calling this method
+    const attackRoot = this.attackTreeRoot.getAndRequireEquals();
+    const attackFleetHash = Poseidon.hash(AttackFleet.toFields(attackFleet));
+    const derivedAttackRoot = defenderAttackWitness.calculateRoot(attackFleetHash);
+    attackRoot.assertEquals(derivedAttackRoot, Error.NOT_ATTACKER);
+
+    const attackerId = HelperUtils.getPlayerIdFromAddress(this.sender);
+    attackerId.assertEquals(attackFleet.attackerId, Error.NOT_ATTACKER);
+   
+
     // verify that the forfeit claim is valid (time has passed)
+    const currentTime = this.network.timestamp.get();
+    const attackLaunchedAt = attackFleet.attackLaunchedAt;
+    const timePassed = currentTime.sub(attackLaunchedAt);
+    timePassed.assertLessThanOrEqual(Const.FORFEIT_CLAIM_DURATION, Error.FORFEIT_CLAIM_DURATION);
+
+    // modify attacker points 
+    const planetRoot = this.planetTreeRoot.getAndRequireEquals();
+    const attackerDetailsHash = Poseidon.hash(PlanetDetails.toFields(attackerDetails));
+    const derivedplanetRoot = attackerPlanetWitness.calculateRoot(attackerDetailsHash);
+    planetRoot.assertEquals(derivedplanetRoot, Error.INVALID_ATTACKER_DETAILS);
+
+    let attackerPoints = attackerDetails.points;
+    const updatedAttackerPoints = attackerPoints.add(Const.FORFEIT_POINTS);
+    const updatedAttackerDetails = new PlanetDetails({
+        x: attackerDetails.x,
+        y: attackerDetails.y,
+        faction: attackerDetails.faction,
+        points: updatedAttackerPoints,
+    });
+    const updatedAttackerDetailsHash = Poseidon.hash(PlanetDetails.toFields(updatedAttackerDetails));
+    const updatedAttackerRoot = attackerPlanetWitness.calculateRoot(updatedAttackerDetailsHash);
+    this.planetTreeRoot.set(updatedAttackerRoot);
   }
 }

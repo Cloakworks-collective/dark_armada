@@ -22,6 +22,7 @@ export namespace Const {
   export const CHAIN_HASH_TIMES = 10;
   export const WIN_POINTS = Field(2);
   export const LOSE_POINTS = Field(1);
+  export const FORFEIT_POINTS = Field(2);
 
   // fleet values
   export const BATTLESHIP_STRENGTH = Field(4);
