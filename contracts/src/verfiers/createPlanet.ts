@@ -3,7 +3,7 @@ import { Field, Poseidon, MerkleMapWitness } from 'o1js';
 import { Const } from '../utils/consts';
 import { Error } from '../utils/errors';
 
-export class PlanetVerifiers {
+export class CreatePlanetVerifiers {
   static calculateLocationHash(x: Field, y: Field): Field {
     let locationHash = Poseidon.hash([x, y]);
     for (let i = 0; i < Const.CHAIN_HASH_TIMES; i++) {

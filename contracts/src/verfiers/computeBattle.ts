@@ -1,10 +1,10 @@
 import { Field, Provable } from 'o1js';
 
-import { Fleet } from '../utils/models';
+import { Fleet } from '../utils/globalObjects';
 import { Const } from '../utils/consts';
 import { Error } from '../utils/errors';
 
-export class BattleVerifiers {
+export class ComputeBattleVerifiers {
 
     verifyFleetStrength(fleet: Fleet) {
         const fleetStrength = fleet.strength();

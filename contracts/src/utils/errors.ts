@@ -11,7 +11,7 @@ export namespace Error {
   export const PLAYER_HAS_PLANET = 'Player already has a home planet';
 
   // ownership error messages
-  export const PLAYER_HAS_NO_ACCESS = 'This player has no access';
+  export const PLAYER_HAS_NO_ACCESS = 'This player has no access to this planet';
 
   // fleet error messages
   export const FLEET_STRENGTH = 'Fleet strength too high';

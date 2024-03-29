@@ -22,7 +22,8 @@ export namespace Const {
   export const BATTLESHIP_STRENGTH = Field(4);
   export const DESTROYER_STRENGTH = Field(2);
   export const CARRIER_STRENGTH = Field(6);
-  export const MAX_FLEET_STRENGTH = Field(1000);
+  export const MAX_DEFENSE_STRENGTH = Field(1000);
+  export const MAX_ATTACK_STRENGTH = Field(1000);
 
   // forfeit const
   export const FORFEIT_CLAIM_DURATION = UInt64.from(86400000); // 24 hours in milliseconds

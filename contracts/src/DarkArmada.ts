@@ -10,26 +10,22 @@ import {
   Poseidon,
 } from 'o1js';
 
-/**
- * MerkleTree witnesses
- *
- * @note: The height of the tree is 12, therefor the number of leaves is 2^(12-1) = 2048
- * @note: The max number of planets is 1000, so, the tree is big enough to hold all the planets, with room for expansion
- * @note: the index of the leaf is planetId, and the same index(planetId) is used in all the trees, to store the same planet data
- * @note: e.g. leaf 2 in planetTreeWitness, ownershipTreeWitness, defenseTreeWitness, attackTreeWitness, all represent the same planet(planetId=2)
- */
-class planetTreeWitness extends MerkleWitness(12) {}
-class ownershipTreeWitness extends MerkleWitness(12) {}
-class defenseTreeWitness extends MerkleWitness(12) {}
-class attackTreeWitness extends MerkleWitness(12) {}
+import { 
+    PlanetDetails, 
+    PlanetaryDefense,
+    AttackFleet,
+    planetTreeWitness,
+    ownershipTreeWitness,
+    defenseTreeWitness,
+    attackTreeWitness,
+ } from './utils/globalObjects';
 
 import { Const } from './utils/consts';
 import { Error } from './utils/errors';
-import { PlanetDetails, Fleet } from './utils/models';
-
 import { HelperUtils } from './utils/helpers';
-import { PlanetVerifiers } from './verfiers/planet';
-import { BattleVerifiers } from './verfiers/battle';
+import { CreatePlanetVerifiers } from './verfiers/createPlanet';
+import { ComputeBattleVerifiers } from './verfiers/computeBattle';
+import { SetDefenseVerifiers } from './verfiers/setDefense';
 
 export class DarkArmadaZkApp extends SmartContract {
   /**
@@ -88,15 +84,15 @@ export class DarkArmadaZkApp extends SmartContract {
   ) {
     // verify max number of planets constraint
     const numPlanetsState = this.numberOfPlanets.getAndRequireEquals();
-    PlanetVerifiers.verifyMaxPlanets(numPlanetsState);
+    CreatePlanetVerifiers.verifyMaxPlanets(numPlanetsState);
 
     // verify co-ordinates are within game map
-    PlanetVerifiers.verifyCoordinate(x, y);
+    CreatePlanetVerifiers.verifyCoordinate(x, y);
 
     // verify co-ordinates are not already taken
     const locationNullifierRoot =
       this.locationNullifierRoot.getAndRequireEquals();
-    PlanetVerifiers.verifyLocationHasNoPlanet(
+    CreatePlanetVerifiers.verifyLocationHasNoPlanet(
       x,
       y,
       locationNullifierRoot,
@@ -104,15 +100,15 @@ export class DarkArmadaZkApp extends SmartContract {
     );
 
     // verify co-ordinates are suitable for planet creation
-    PlanetVerifiers.verifySuitableCoordinates(x, y);
+    CreatePlanetVerifiers.verifySuitableCoordinates(x, y);
 
     // verify that the faction is valid
-    PlanetVerifiers.verifyFaction(faction);
+    CreatePlanetVerifiers.verifyFaction(faction);
 
     // verify player does not already have a home planet
     const playerId = HelperUtils.getPlayerIdFromAddress(this.sender);
     const playerNullifierRoot = this.playerNullifierRoot.getAndRequireEquals();
-    PlanetVerifiers.verifyPlayerHasNoPlanet(
+    CreatePlanetVerifiers.verifyPlayerHasNoPlanet(
       playerId,
       playerNullifierRoot,
       playerNullifierWitness
@@ -132,43 +128,33 @@ export class DarkArmadaZkApp extends SmartContract {
    * @param defenseWitness - Witness to store defense at the given leaf index of defense merkleTree
    */
   @method setDefense(
-    serializedDefense: Field,
+    battleships: Field,
+    destroyers: Field,
+    carriers: Field,
     defenderOwnerWitness: ownershipTreeWitness,
     defenseWitness: defenseTreeWitness,
     attackWitness: attackTreeWitness
   ) {
     // verify ownership of planet (only the planet owner can set defense)
-    const playerId = HelperUtils.getPlayerIdFromAddress(this.sender);
-
-    /*
-     * check that the ownerWitness is sent by the owner of the planet
-     * check that the defenderOwnerWitness is sent by the owner of the planet
-     */
     const ownerRoot = this.ownershipTreeRoot.getAndRequireEquals();
-    const derivedOwnerRoot = defenderOwnerWitness.calculateRoot(playerId);
-    ownerRoot.assertEquals(derivedOwnerRoot, Error.INVALID_PLAYER);
-
-    const planetId = defenderOwnerWitness.calculateIndex();
-    const defendingPlanetId = defenseWitness.calculateIndex();
-    planetId.assertEquals(defendingPlanetId, Error.PLAYER_HAS_NO_ACCESS);
+    const ownedWorldIndex = HelperUtils.getOwnedWorldId(this.sender, ownerRoot, defenderOwnerWitness);
+    const defenseWitnessIndex = defenseWitness.calculateIndex();
+    defenseWitnessIndex.assertEquals(ownedWorldIndex, Error.PLAYER_HAS_NO_ACCESS);
 
     // verify that planet is not under attack
-
-    /**
-     * check that the attackWitness is sent by the owner of the planet
-     * check that that the plent is not under attack
-     */
-    const attackPlanetId = attackWitness.calculateIndex();
-    planetId.assertNotEquals(attackPlanetId, Error.PLAYER_HAS_NO_ACCESS);
-
+    const attackWitnessIndex = attackWitness.calculateIndex();
+    attackWitnessIndex.assertEquals(ownedWorldIndex, Error.PLAYER_HAS_NO_ACCESS);
     const attackRoot = this.attackTreeRoot.getAndRequireEquals();
-    const derivedAttackRoot = attackWitness.calculateRoot(Const.EMPTY_FIELD);
-    attackRoot.assertEquals(derivedAttackRoot, Error.PLANET_UNDER_ATTACK);
+    SetDefenseVerifiers.verifyPlanetNotUnderAttack(attackRoot, attackWitness);
 
     // verify planetary defense strength is within limits
+    const defense = HelperUtils.getPlanetaryDefense(this.sender, battleships, destroyers, carriers);
+    SetDefenseVerifiers.verifyDefenseStrength(defense);
 
-    // compute defenseHash
-    // modify defenseTreeRoot with defenseHash
+    // modify defenseTreeRoot
+    const defenseHash = Poseidon.hash(PlanetaryDefense.toFields(defense));
+    const updatedDefenseRoot = defenseWitness.calculateRoot(defenseHash);
+    this.defenseTreeRoot.set(updatedDefenseRoot);
   }
 
   /**
