@@ -1,4 +1,9 @@
 export namespace Error {
+
+  // generic errors
+  export const INVALID_KEY = 'Not the correct key';
+  export const PLAYER_HAS_NO_ACCESS = 'This player has no access to this planet';
+
   // create a new planet error messages
   export const COORDINATE_OUT_OF_RANGE = 'Coordinate out of range';
   export const PLANET_ALREADY_EXISTS_AT_THIS_LOCATION = 
@@ -9,9 +14,6 @@ export namespace Error {
     'Coordinate not suitable for planet creation';
   export const INVALID_FACTION = 'Invalid faction';
   export const PLAYER_HAS_PLANET = 'Player already has a home planet';
-
-  // ownership error messages
-  export const PLAYER_HAS_NO_ACCESS = 'This player has no access to this planet';
 
   // fleet error messages
   export const FLEET_STRENGTH = 'Fleet strength too high';

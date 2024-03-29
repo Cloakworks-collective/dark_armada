@@ -115,9 +115,30 @@ export class DarkArmadaZkApp extends SmartContract {
     );
 
     // modify planetTreeRoot
+    const pd = new PlanetDetails({
+      x: x,
+      y: y,
+      faction: faction,
+      points: Field(0),
+    });
+    const planetDetailsHash = Poseidon.hash(PlanetDetails.toFields(pd));
+    const updatedPlanetDetailsRoot = planetWitness.calculateRoot(planetDetailsHash);
+    this.planetTreeRoot.set(updatedPlanetDetailsRoot);
+
     // modify ownershipTreeRoot
-    // modify locationNullifierRoot
-    // modify playerNullifierRoot
+    const updatedOwnershipRoot = ownerWitness.calculateRoot(playerId);
+    this.ownershipTreeRoot.set(updatedOwnershipRoot);
+
+    // modify locationNullifierRoot after verifying key 
+    const planetHash = CreatePlanetVerifiers.calculateLocationHash(x, y);
+    const [updatedLocRoot, updatedLocKey] = locationNullifierWitness.computeRootAndKey(Const.FILLED);
+    planetHash.assertEquals(updatedLocKey, Error.INVALID_KEY);
+    this.locationNullifierRoot.set(updatedLocRoot);
+    
+    // modify playerNullifierRoot after verifying key
+    const [updatedPlayerRoot, updatedPlayerKey] = playerNullifierWitness.computeRootAndKey(Const.FILLED);
+    planetHash.assertEquals(updatedPlayerKey, Error.INVALID_KEY);
+    this.playerNullifierRoot.set(updatedPlayerRoot);
   }
 
   /**

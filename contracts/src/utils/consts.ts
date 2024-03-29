@@ -9,6 +9,9 @@ export namespace Const {
   export const EMPTY_TREE_ROOT12 = emptyMerkleTree12.getRoot();
   export const EMPTY_FIELD = Field(0);
 
+  // filled values
+  export const FILLED = Field(1);
+
   // game constants
   export const MAX_NUM_PLANETS = 1000;
   export const MAX_GAME_MAP_LENGTH = Field(10000); // initiates 10000 x 10000 grid
