@@ -5,13 +5,6 @@ import { Const } from '../utils/consts';
 import { Error } from '../utils/errors';
 
 export class ComputeBattleVerifiers {
-  static verifyFleetStrength(fleet: PlanetaryDefense) {
-    const fleetStrength = fleet.strength();
-    fleetStrength.assertLessThanOrEqual(
-      Const.MAX_DEFENSE_STRENGTH,
-      Error.DEFENSE_STRENGTH
-    );
-  }
 
   static calculateWinner(
     attackFleet: AttackFleet,

@@ -1,4 +1,5 @@
 import { Field, Struct, MerkleWitness, UInt64 } from 'o1js';
+import { PublicKey } from 'o1js/dist/node/provable/curve-bigint';
 
 /**
  * MerkleTree witnesses
@@ -12,6 +13,7 @@ export class planetTreeWitness extends MerkleWitness(12) {}
 export class ownershipTreeWitness extends MerkleWitness(12) {}
 export class defenseTreeWitness extends MerkleWitness(12) {}
 export class attackTreeWitness extends MerkleWitness(12) {}
+export class detailTreeWitness extends MerkleWitness(12) {}
 
 export type GameWitness =
   | planetTreeWitness
@@ -54,4 +56,13 @@ export class PlanetDetails extends Struct({
   y: Field,
   faction: Field,
   points: Field,
+}) {}
+
+export class PlanetaryInfo extends Struct({
+  owner: Field,
+  locattionHash: Field,
+  faction: Field,
+  points: Field,
+  defenseHash: Field,
+  incomingAttackHash: Field
 }) {}

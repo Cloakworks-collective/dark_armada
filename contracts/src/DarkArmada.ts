@@ -29,7 +29,6 @@ import { CreatePlanetVerifiers } from './verfiers/createPlanet';
 import { SetDefenseVerifiers } from './verfiers/setDefense';
 import { LaunchAttackVerifiers } from './verfiers/launchAttack';
 import { ComputeBattleVerifiers } from './verfiers/computeBattle';
-import { p } from 'o1js/dist/node/bindings/crypto/finite-field';
 
 export class DarkArmadaZkApp extends SmartContract {
   /**
@@ -42,6 +41,7 @@ export class DarkArmadaZkApp extends SmartContract {
   @state(Field) attackTreeRoot = State<Field>(); // Incoming attack MerkleTree root (index -> serializedAttack)
   @state(Field) playerNullifierRoot = State<Field>(); // Player nullifier MerkleMap root (playerAddress -> boolean)
   @state(Field) locationNullifierRoot = State<Field>(); // Planet nullifier MerkleMap root (coordinateHash -> boolean)
+  @state(Field) detailsTreeRoot = State<Field>(); // Planet details MerkleTree root (index -> planetDetailsHash)
 
   /**
    * Game Events
@@ -66,6 +66,8 @@ export class DarkArmadaZkApp extends SmartContract {
     this.attackTreeRoot.set(Const.EMPTY_TREE_ROOT12);
     this.playerNullifierRoot.set(Const.EMPTY_MAP_ROOT);
     this.locationNullifierRoot.set(Const.EMPTY_MAP_ROOT);
+    this.detailsTreeRoot.set(Const.EMPTY_TREE_ROOT12);
+
   }
 
   /**
@@ -146,7 +148,11 @@ export class DarkArmadaZkApp extends SmartContract {
       playerNullifierWitness.computeRootAndKey(Const.FILLED);
     planetHash.assertEquals(updatedPlayerKey, Error.INVALID_KEY);
     this.playerNullifierRoot.set(updatedPlayerRoot);
+
+    // increment number of planets
+    this.numberOfPlanets.set(numPlanetsState.add(Field(1)));
   }
+
 
   /**
    * Set the defense of a planet

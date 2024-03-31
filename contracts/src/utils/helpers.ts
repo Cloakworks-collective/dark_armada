@@ -11,7 +11,7 @@ import {
 
 import { Const } from './consts';
 import { Error } from '../utils/errors';
-import { PlanetDetails } from './globalObjects';
+import { PlanetDetails, PlanetaryInfo } from './globalObjects';
 
 export class HelperUtils {
   /**
@@ -99,6 +99,36 @@ export class HelperUtils {
     new PlanetDetails({ x: x, y: y, faction: faction, points: points });
     const planetDetailsHash = Poseidon.hash([x, y, faction, points]);
   }
+
+
+  // export class PlanetaryInfo extends Struct({
+  //   owner: Field,
+  //   locattionHash: Field,
+  //   faction: Field,
+  //   points: Field,
+  //   defenseHash: Field,
+  //   incomingAttackHash: Field
+  // }) {}
+
+  static getPlanetInfoHash(
+    playerId: Field,
+    locationHash: Field,
+    faction: Field,
+    points: Field,
+    defenseHash: Field,
+    incomingAttackHash: Field
+  ): Field {
+    const info = new PlanetaryInfo({
+      owner: playerId,
+      locattionHash: locationHash,
+      faction: faction,
+      points: points,
+      defenseHash: defenseHash,
+      incomingAttackHash: incomingAttackHash,
+    });
+    return Poseidon.hash(PlanetaryInfo.toFields(info));
+  }
+
 
   static getPlanetaryDefense(
     player: PublicKey,

@@ -36,4 +36,7 @@ export namespace Error {
   export const NOT_ATTACKER = 'Only the attacker can claim the forfeit';
   export const FORFEIT_CLAIM_DURATION =
     'Forfeit can not be claimed before claim duration passed';
+
+  export const INVALID_PLANET_DETAILS = 
+    'Invalid planet details, information out of sync with Merkle tree';  
 }
