@@ -17,6 +17,7 @@
       - [Poseidon hashing on M1 Mac](#poseidon-hashing-on-m1-mac)
       - [Keccak256 hashing on M1 Mac](#keccak256-hashing-on-m1-mac)
       - [Chain Poseidon hash on M1 Mac](#chain-poseidon-hash-on-m1-mac)
+  * [Game state](#game-state)    
   * [Game Progress](#game-progress)    
   * [References](#references)
 
@@ -258,6 +259,115 @@ Therefore, We can arbitrarily increase the time needed to hash every co-ordinate
 e.g. with a N of 100,000 -  hasing 100 co-ordinates will take more than 4 minutes. 
 
 Thus, given a big enough universe, it would be quite hard for anyone to bruteforce all the co-ordinates.
+
+
+## Game State
+
+I came to a conclusion that the last game state design in the previous repository: [DarkForest_mina](https://github.com/enderNakamoto/Darkforest_Mina) was flawed and not quite working for our purposes. The idea of dividing up the contracts in three different parts and somehow composing them together, is not the best idea. 
+
+Therefore, two different game state architectures were tried and tested:
+
+### State Architecture 1: Putting the entire state in a Struct and Hashing it, 1 Merkle Tree per planet: 
+
+The Game state in this scenario would be: 
+Implementation - https://github.com/Cloakworks-collective/dark_armada/blob/main/contracts/src/DarkArmadaSingle.ts
+
+```
+    @state(Field) numberOfPlanets = State<Field>(); // Number of initalized planets
+
+    @state(Field) playerNullifierRoot = State<Field>(); // Player nullifier MerkleMap root (playerAddress -> boolean)
+
+    @state(Field) locationNullifierRoot = State<Field>(); // Planet nullifier MerkleMap root (coordinateHash -> boolean)
+
+    @state(Field) detailsTreeRoot = State<Field>(); // Planet details MerkleTree root (index -> planetDetailsHash)
+
+```
+Note: the main Merkle Tree Root that holds all the data is `detailsTreeRoot`.
+
+We have a struct `PlanetInfo`:
+
+ ```
+export class PlanetaryInfo extends Struct({
+  owner: Field,
+  locattionHash: Field,
+  faction: Field,
+  points: Field,
+  defenseHash: Field,
+  incomingAttackHash: Field
+}) {}
+```
+
+Where, 
+defenseHash is the Poseidon Hash of the struct 
+
+```
+export class PlanetaryDefense extends Struct({
+  playerId: Field,
+  battleships: Field,
+  destroyers: Field,
+  carriers: Field,
+}) {
+  strength() {
+    const fleetStrength = this.battleships
+      .add(this.destroyers)
+      .add(this.carriers);
+    return fleetStrength;
+  }
+}
+```
+
+and incomingAttackhash is the poseidon hash of the struct: 
+
+```
+export class AttackFleet extends Struct({
+  faction: Field,
+  attackerId: Field,
+  battleships: Field,
+  destroyers: Field,
+  carriers: Field,
+  attackLaunchedAt: UInt64,
+}) {
+  strength() {
+    const fleetStrength = this.battleships
+      .add(this.destroyers)
+      .add(this.carriers);
+    return fleetStrength;
+  }
+}
+```
+Storing this in the merkle tree leaf and verifying the validity of the daata in all the functions works in theory. 
+
+#### Issue with this structure (Architecture 1): 
+
+After computing the battle result, both the defenderPlanet and attackingPlanet structs need to be updated. 
+
+It is challenging. updating the merkle tree twice in one transaction with two different witnesses
+
+- There are a couple of ways of solving it: 
+Path 1 : https://github.com/o1-labs/o1js/issues/659
+
+Use of Action/Reducer pattern does not quite work in a single method because once tree is updated, the secondWitness becomes stale, and the state is erroneously updated. 
+
+and Path 2: https://github.com/berzanorg/o1js-merkle-double-witness
+
+or 
+
+https://github.com/o1-labs/o1js/issues/659#issuecomment-1360787468
+
+
+- This seems a bit hacky. So I tried another approach to solve the issue: 
+
+### State Architecture 2: Have multiple merkle trees divide up the data. 
+
+Imoplementation - https://github.com/Cloakworks-collective/dark_armada/blob/main/contracts/src/DarkArmada.ts
+
+In this method, the state looks like: 
+
+```
+
+```
+
+
 
 
 ## Development Progress
