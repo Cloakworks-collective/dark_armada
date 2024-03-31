@@ -1,3 +1,5 @@
+![alt text](images/cover.png)
+
 # Dark Armada: Masters of  the Void
 
 - [Dark Armada: Masters of  the Void](#dark-armada--masters-of--the-void)
