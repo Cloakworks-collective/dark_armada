@@ -364,11 +364,32 @@ Imoplementation - https://github.com/Cloakworks-collective/dark_armada/blob/main
 In this method, the state looks like: 
 
 ```
+@state(Field) numberOfPlanets = State<Field>(); // Number of initalized planets
 
+  @state(Field) planetTreeRoot = State<Field>(); // Planet details MerkleTree root (index -> planetDetailsHash)
+
+  @state(Field) ownershipTreeRoot = State<Field>(); // Planet ownership MerkleTree root (index -> playerAddress)
+
+  @state(Field) defenseTreeRoot = State<Field>(); // Planetary defense MerkleTree root (index -> defenseHash)
+
+  @state(Field) attackTreeRoot = State<Field>(); // Incoming attack MerkleTree root (index -> serializedAttack)
+
+  @state(Field) playerNullifierRoot = State<Field>(); // Player nullifier MerkleMap root (playerAddress -> boolean)
+
+  @state(Field) locationNullifierRoot = State<Field>(); // Planet nullifier MerkleMap root (coordinateHash -> boolean)
+
+  @state(Field) detailsTreeRoot = State<Field>(); // Planet details MerkleTree root (index -> planetDetailsHash)
 ```
 
+The 4 Merkle Tree Roots - planetTreeRoot,ownershipTreeRoot, defenseTreeRoot, and attackTreeRoot shares the same index, which is also synced with numberOfPlanets
 
+e.g. Leaf 1n in ownerShipTree is the PlayerId of the player that owns the planet in Leaf 1n of PlanetTree.
 
+Leaf 1n of Defense Tree is the Defense Hash of the same planet, and Lean 1n of Attrak Merkle Tree has the Incoming Attack on the same planet. 
+
+Having multiple Merkle Trees makes it seemingly hard, but it also bypasses teh issue of having to use Action?reducer of state Architecture 1, which does not quite work! 
+
+In the contracts, once you verify the ownership with Owner Tree for leaf `1n`, you can verify that you are the owner of all the data in all the `1n` leaves of other trees.
 
 ## Development Progress
 
